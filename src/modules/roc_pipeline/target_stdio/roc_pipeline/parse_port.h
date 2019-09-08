@@ -22,9 +22,15 @@ namespace pipeline {
 //!
 //! @remarks
 //!  The input string should be in one of the following forms:
-//!   - "PROTO::PORT"        e.g. "rtp::123"
-//!   - "PROTO:IPv4:PORT"    e.g. "rtp:1.2.3.4:123"
-//!   - "PROTO:[IPv6]:PORT"  e.g. "rtp:[::1]:123"
+//!   - "PROTO::PORT"                e.g. "rtp::123"
+//!   - "PROTO:IPv4:PORT"            e.g. "rtp:1.2.3.4:123"
+//!   - "PROTO:IPv4@:PORT"           e.g. "rtp:225.1.2.3@:123"
+//!   - "PROTO:IPv4@MIFACE:PORT"     e.g. "rtp:225.1.2.3@eth1:123"
+//!   - "PROTO:IPv4@MIFACE:PORT"     e.g. "rtp:225.1.2.3@10.0.1.1:123"
+//!   - "PROTO:[IPv6]:PORT"          e.g. "rtp:[::1]:123"
+//!   - "PROTO:[IPv6]@:PORT"         e.g. "rtp:[::1]@:123"
+//!   - "PROTO:[IPv6]@MIFACE:PORT"   e.g. "rtp:[::1]@lo:123"
+//!   - "PROTO:[IPv6]@MIFACE:PORT"   e.g. "rtp:[::1]@[::1]:123"
 //!
 //! @returns
 //!  false if string can't be parsed.

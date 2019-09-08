@@ -88,6 +88,15 @@ long parse_port_num(const char* port) {
     return port_num;
 }
 
+bool parse_ipv4_addr(const char* addr, long port_num, PortConfig& result) {
+    if (!result.address.set_ipv4(addr, (int)port_num)) {
+        roc_log(LogError, "parse port: bad IPv4 address: %s", addr);
+        return false;
+    }
+
+    return true;
+}
+
 bool parse_ipv6_addr(const char* addr, long port_num, PortConfig& result) {
     const size_t addrlen = strlen(addr);
 
@@ -112,13 +121,10 @@ bool parse_ipv6_addr(const char* addr, long port_num, PortConfig& result) {
     return true;
 }
 
-bool parse_ipv4_addr(const char* addr, long port_num, PortConfig& result) {
-    if (!result.address.set_ipv4(addr, (int)port_num)) {
-        roc_log(LogError, "parse port: bad IPv4 address: %s", addr);
-        return false;
+void parse_miface(const char* miface, PortConfig& result) {
+    if (strlen(miface) != 1) {
+        result.address.set_miface(miface + 1);
     }
-
-    return true;
 }
 
 bool parse_addr(const char* begin, const char* end, long port_num, PortConfig& result) {
@@ -134,6 +140,12 @@ bool parse_addr(const char* begin, const char* end, long port_num, PortConfig& r
 
     memcpy(addr_buf, begin + 1, size_t(end - begin) - 1);
     addr_buf[end - begin - 1] = '\0';
+
+    const char* miface = strchr(addr_buf, '@');
+    if (miface) {
+        parse_miface(miface, result);
+        addr_buf[miface - addr_buf] = '\0';
+    }
 
     return addr_buf[0] == '[' ? parse_ipv6_addr(addr_buf, port_num, result)
                               : parse_ipv4_addr(addr_buf, port_num, result);
@@ -153,7 +165,7 @@ bool parse_port(PortType type, const char* input, PortConfig& result) {
     if (!lcolon || !rcolon || lcolon == rcolon || lcolon == input || !rcolon[1]) {
         roc_log(LogError,
                 "parse port: bad format: expected"
-                " PROTO:ADDR:PORT or PROTO::PORT, or PROTO:ADDR@IFACE:PORT");
+                " PROTO:ADDR:PORT or PROTO::PORT, or PROTO:ADDR@MIFACE:PORT");
         return false;
     }
 

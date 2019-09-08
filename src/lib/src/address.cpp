@@ -67,6 +67,24 @@ int roc_address_init(roc_address* address, roc_family family, const char* ip, in
     return -1;
 }
 
+int roc_address_set_miface(roc_address* address, const char* miface) {
+    if (!address) {
+        return -1;
+    }
+
+    if (!miface) {
+        return -1;
+    }
+
+    packet::Address& pa = get_address(address);
+
+    if (!pa.set_miface(miface)) {
+        return -1;
+    }
+
+    return 0;
+}
+
 roc_family roc_address_family(const roc_address* address) {
     if (!address) {
         return ROC_AF_INVALID;
@@ -117,4 +135,14 @@ int roc_address_port(const roc_address* address) {
     }
 
     return port;
+}
+
+const char* roc_address_miface(const roc_address* address) {
+    if (!address) {
+        return NULL;
+    }
+
+    const packet::Address& pa = get_address(address);
+
+    return pa.miface();
 }

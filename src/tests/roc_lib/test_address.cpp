@@ -82,4 +82,25 @@ TEST(address, bad_args) {
     LONGS_EQUAL(-1, roc_address_port(&bad_addr));
 }
 
+TEST(address, multicast) {
+    roc_address addr;
+    LONGS_EQUAL(0, roc_address_init(&addr, ROC_AF_IPv4, "1.2.3.4", 123));
+    CHECK(!roc_address_miface(&addr));
+
+    const char* miface = "5.6.7.8";
+    LONGS_EQUAL(0, roc_address_set_miface(&addr, miface));
+
+    STRCMP_EQUAL(miface, roc_address_miface(&addr));
+}
+
+TEST(address, bad_multicast) {
+    roc_address addr;
+    LONGS_EQUAL(0, roc_address_init(&addr, ROC_AF_IPv4, "1.2.3.4", 123));
+
+    CHECK(!roc_address_miface(NULL));
+    LONGS_EQUAL(-1, roc_address_set_miface(NULL, NULL));
+    LONGS_EQUAL(-1, roc_address_set_miface(NULL, "1.2.3.4"));
+    LONGS_EQUAL(-1, roc_address_set_miface(&addr, NULL));
+}
+
 } // namespace roc

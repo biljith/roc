@@ -37,7 +37,7 @@ typedef enum roc_family {
 
 enum {
     /** Address struct size. */
-    ROC_ADDRESS_SIZE = 64
+    ROC_ADDRESS_SIZE = 256
 };
 
 /** Network address.
@@ -85,6 +85,19 @@ typedef struct roc_address {
 ROC_API int
 roc_address_init(roc_address* address, roc_family family, const char* ip, int port);
 
+/** Set multicast interface address.
+ *
+ * @b Parameters
+ *  - @p address should point to a properly initialized address struct
+ *  - @p miface should point to a zero-terminated string with a valid IPv4 or
+ *       IPv6 multicast address
+ *
+ * @b Returns
+ *  - returns zero if no error occurred
+ *  - returns a negative value if the arguments are invalid
+ */
+ROC_API int roc_address_set_miface(roc_address* address, const char* miface);
+
 /** Get address family.
  *
  * @b Parameters
@@ -125,6 +138,18 @@ ROC_API const char* roc_address_ip(const roc_address* address, char* buf, size_t
  *  - returns a negative value if the arguments are invalid
  */
 ROC_API int roc_address_port(const roc_address* address);
+
+/** Get multicast interface address.
+ *
+ * @b Parameters
+ *  - @p address should point to a properly initialized address struct
+ *
+ * @b Returns
+ *  - returns zero-terminated string representation of the multicast address
+ *  - returns NULL if the argument is invalid
+ *  - returns NULL if the multicast address was not set
+ */
+ROC_API const char* roc_address_miface(const roc_address* address);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -15,6 +15,7 @@ namespace packet {
 
 Address::Address() {
     memset(&sa_, 0, sizeof(sa_));
+    miface_[0] = '\0';
 }
 
 bool Address::valid() const {
@@ -54,6 +55,29 @@ bool Address::set_ipv6(const char* ip_str, int port) {
     sa_.addr6.sin6_family = AF_INET6;
     sa_.addr6.sin6_addr = addr;
     sa_.addr6.sin6_port = htons(uint16_t(port));
+
+    return true;
+}
+
+bool Address::set_miface(const char* miface) {
+    if (!miface) {
+        return false;
+    }
+
+    size_t len = strlen(miface);
+    if (!len) {
+        return false;
+    }
+
+    if (len > sizeof(miface_) - 1) {
+        return false;
+    }
+
+    for (size_t n = 0; n < len; ++n) {
+        miface_[n] = miface[n];
+    }
+
+    miface_[len] = '\0';
 
     return true;
 }
@@ -101,6 +125,14 @@ bool Address::multicast() const {
     default:
         return false;
     }
+}
+
+const char* Address::miface() const {
+    if (!strlen(miface_)) {
+        return NULL;
+    }
+
+    return miface_;
 }
 
 bool Address::get_ip(char* buf, size_t bufsz) const {

@@ -186,5 +186,42 @@ TEST(port, bad_port_number) {
     CHECK(!parse_port(Port_AudioSource, "rtp:1.2.3.4:999999999999999", port));
 }
 
+TEST(port, multicast_ipv4) {
+    {
+        PortConfig port;
+
+        CHECK(parse_port(Port_AudioSource, "rtp:225.1.2.3@0.0.0.0:123", port));
+        STRCMP_EQUAL("0.0.0.0", port.address.miface());
+    }
+    {
+        PortConfig port;
+
+        CHECK(parse_port(Port_AudioSource, "rtp:225.1.2.3@:123", port));
+        CHECK(!port.address.miface());
+    }
+}
+
+TEST(port, multicast_ipv6) {
+    {
+        PortConfig port;
+
+        CHECK(parse_port(Port_AudioSource, "rtp:[::1]@[::1]:123", port));
+        STRCMP_EQUAL("[::1]", port.address.miface());
+    }
+    {
+        PortConfig port;
+
+        CHECK(parse_port(Port_AudioSource, "rtp:[::1]@:123", port));
+        CHECK(!port.address.miface());
+    }
+}
+
+TEST(port, bad_multicast) {
+    PortConfig port;
+
+    CHECK(!parse_port(Port_AudioSource, "rtp:225.1.2.3@", port));
+    CHECK(!parse_port(Port_AudioSource, "rtp:225.1.2.3@0.0.0.0", port));
+}
+
 } // namespace pipeline
 } // namespace roc
