@@ -47,6 +47,98 @@ bool match_proto(PortType type, const char* str, PortProtocol& proto) {
     return false;
 }
 
+PortProtocol parse_proto(const char* begin, const char* end, PortType type) {
+    char proto_buf[16] = {};
+
+    if (size_t(end - begin) > sizeof(proto_buf) - 1) {
+        roc_log(LogError, "parse port: bad protocol: too long");
+        return Proto_None;
+    }
+
+    memcpy(proto_buf, begin, size_t(end - begin));
+    proto_buf[end - begin] = '\0';
+
+    PortProtocol protocol = Proto_None;
+    if (!match_proto(type, proto_buf, protocol)) {
+        return Proto_None;
+    }
+
+    return protocol;
+}
+
+long parse_port_num(const char* port) {
+    if (!isdigit(*port)) {
+        roc_log(LogError, "parse port: bad port: not a number");
+        return -1;
+    }
+
+    char* port_end = NULL;
+    const long port_num = strtol(port, &port_end, 10);
+
+    if (port_num == LONG_MAX || port_num == LONG_MIN || !port_end || *port_end) {
+        roc_log(LogError, "parse port: bad port: not a positive integer");
+        return -1;
+    }
+
+    if (port_num < 0 || port_num > 65535) {
+        roc_log(LogError, "parse port: bad port: not in range [1; 65535]");
+        return -1;
+    }
+
+    return port_num;
+}
+
+bool parse_ipv6_addr(const char* addr, long port_num, PortConfig& result) {
+    const size_t addrlen = strlen(addr);
+
+    if (addr[addrlen - 1] != ']') {
+        roc_log(LogError, "parse port: bad IPv6 address: expected closing ']'");
+        return false;
+    }
+
+    char addr6[128] = {};
+    if (addrlen - 2 > sizeof(addr6) - 1) {
+        roc_log(LogError, "parse port: bad IPv6 address: address too long");
+        return false;
+    }
+
+    memcpy(addr6, addr + 1, addrlen - 2);
+
+    if (!result.address.set_ipv6(addr6, (int)port_num)) {
+        roc_log(LogError, "parse port: bad IPv6 address: %s", addr6);
+        return false;
+    }
+
+    return true;
+}
+
+bool parse_ipv4_addr(const char* addr, long port_num, PortConfig& result) {
+    if (!result.address.set_ipv4(addr, (int)port_num)) {
+        roc_log(LogError, "parse port: bad IPv4 address: %s", addr);
+        return false;
+    }
+
+    return true;
+}
+
+bool parse_addr(const char* begin, const char* end, long port_num, PortConfig& result) {
+    if (begin + 1 == end) {
+        return parse_ipv4_addr("0.0.0.0", port_num, result);
+    }
+
+    char addr_buf[256] = {};
+    if (size_t(end - begin) > sizeof(addr_buf) - 1) {
+        roc_log(LogError, "parse port: bad address: too long");
+        return false;
+    }
+
+    memcpy(addr_buf, begin + 1, size_t(end - begin) - 1);
+    addr_buf[end - begin - 1] = '\0';
+
+    return addr_buf[0] == '[' ? parse_ipv6_addr(addr_buf, port_num, result)
+                              : parse_ipv4_addr(addr_buf, port_num, result);
+}
+
 } // namespace
 
 bool parse_port(PortType type, const char* input, PortConfig& result) {
@@ -60,84 +152,23 @@ bool parse_port(PortType type, const char* input, PortConfig& result) {
 
     if (!lcolon || !rcolon || lcolon == rcolon || lcolon == input || !rcolon[1]) {
         roc_log(LogError,
-                "parse port: bad format: expected PROTO:ADDR:PORT or PROTO::PORT");
+                "parse port: bad format: expected"
+                " PROTO:ADDR:PORT or PROTO::PORT, or PROTO:ADDR@IFACE:PORT");
         return false;
     }
 
-    PortProtocol protocol = Proto_None;
-
-    char proto_buf[16] = {};
-    if (size_t(lcolon - input) > sizeof(proto_buf) - 1) {
-        roc_log(LogError, "parse port: bad protocol: too long");
-        return false;
-    }
-    memcpy(proto_buf, input, size_t(lcolon - input));
-    proto_buf[lcolon - input] = '\0';
-
-    if (!match_proto(type, proto_buf, protocol)) {
+    const PortProtocol protocol = parse_proto(input, lcolon, type);
+    if (protocol == Proto_None) {
         return false;
     }
 
-    const char* addr = NULL;
-
-    char addr_buf[256] = {};
-    if (size_t(rcolon - lcolon) > sizeof(addr_buf) - 1) {
-        roc_log(LogError, "parse port: bad address: too long");
+    const long port_num = parse_port_num(rcolon + 1);
+    if (port_num == -1) {
         return false;
     }
 
-    if (rcolon > lcolon + 1) {
-        memcpy(addr_buf, lcolon + 1, size_t(rcolon - lcolon - 1));
-        addr_buf[rcolon - lcolon - 1] = '\0';
-        addr = addr_buf;
-    } else {
-        addr = "0.0.0.0";
-    }
-
-    const char* port = &rcolon[1];
-
-    if (!isdigit(*port)) {
-        roc_log(LogError, "parse port: bad port: not a number");
+    if (!parse_addr(lcolon, rcolon, port_num, result)) {
         return false;
-    }
-
-    char* port_end = NULL;
-    long port_num = strtol(port, &port_end, 10);
-
-    if (port_num == LONG_MAX || port_num == LONG_MIN || !port_end || *port_end) {
-        roc_log(LogError, "parse port: bad port: not a positive integer");
-        return false;
-    }
-
-    if (port_num < 0 || port_num > 65535) {
-        roc_log(LogError, "parse port: bad port: not in range [1; 65535]");
-        return false;
-    }
-
-    if (addr[0] == '[') {
-        size_t addrlen = strlen(addr);
-        if (addr[addrlen - 1] != ']') {
-            roc_log(LogError, "parse port: bad IPv6 address: expected closing ']'");
-            return false;
-        }
-
-        char addr6[128] = {};
-        if (addrlen - 2 > sizeof(addr6) - 1) {
-            roc_log(LogError, "parse port: bad IPv6 address: address too long");
-            return false;
-        }
-
-        memcpy(addr6, addr + 1, addrlen - 2);
-
-        if (!result.address.set_ipv6(addr6, (int)port_num)) {
-            roc_log(LogError, "parse port: bad IPv6 address: %s", addr6);
-            return false;
-        }
-    } else {
-        if (!result.address.set_ipv4(addr, (int)port_num)) {
-            roc_log(LogError, "parse port: bad IPv4 address: %s", addr);
-            return false;
-        }
     }
 
     result.protocol = protocol;
