@@ -1091,6 +1091,7 @@ if compiler == 'clang':
             '-Wno-variadic-macros',
             '-Wno-disabled-macro-expansion',
             '-Wno-c++11-long-long',
+            '-Wno-documentation-unknown-command',
         ]})
 
     env.Append(CFLAGS=[
