@@ -180,6 +180,22 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (args.max_sessions_given) {
+        if (args.max_sessions_arg <= 0) {
+            roc_log(LogError, "invalid --max-sessions: should be > 0");
+            return 1;
+        }
+        config.common.max_sessions = (size_t)args.max_sessions_arg;
+    }
+
+    if (args.max_session_packets_given) {
+        if (args.max_session_packets_given <= 0) {
+            roc_log(LogError, "invalid --max-session-packets: should be > 0");
+            return 1;
+        }
+        config.common.max_session_packets = (size_t)args.max_session_packets_arg;
+    }
+
     config.common.poisoning = args.poisoning_flag;
     config.common.beeping = args.beeping_flag;
 

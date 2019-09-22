@@ -179,6 +179,10 @@ void Receiver::fetch_packets_() {
         }
 
         if (!route_packet_(packet)) {
+            ring_buffer_.push_back(*packet);
+            if (ring_buffer_.size() > config_.common.max_sessions * config_.common.max_session_packets) {
+                ring_buffer_.remove(*ring_buffer_.front());
+            }
             continue;
         }
     }
@@ -255,6 +259,14 @@ bool Receiver::create_session_(const packet::PacketPtr& packet) {
     if (!sess->handle(packet)) {
         roc_log(LogError, "receiver: can't create session, can't handle first packet");
         return false;
+    }
+
+    packet::PacketPtr pp;
+
+    for(pp = ring_buffer_.front(); pp; pp = ring_buffer_.nextof(*pp)) {
+        if (sess->handle(pp)) {
+            ring_buffer_.remove(*pp);
+        }
     }
 
     mixer_->add(sess->reader());

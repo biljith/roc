@@ -49,6 +49,12 @@ const int DefaultMinLatencyFactor = -1;
 //! Default maximum latency relative to target latency.
 const int DefaultMaxLatencyFactor = 2;
 
+//! Default maximum number of sessions.
+const int DefaultMaxSessions = 10;
+
+//! Default Maximum number of packets per session.
+const int DefaultMaxSessionPackets = 1024;
+
 //! Port parameters.
 //! @remarks
 //!  On receiver, defines a listened port parameters. On sender,
@@ -181,6 +187,12 @@ struct ReceiverCommonConfig {
     //! Insert weird beeps instead of silence on packet loss.
     bool beeping;
 
+    //! Maximum number of sessions.
+    size_t max_sessions;
+
+    //! Maximum number of packets per session.
+    size_t max_session_packets;
+
     ReceiverCommonConfig()
         : output_sample_rate(DefaultSampleRate)
         , output_channels(DefaultChannelMask)
@@ -188,7 +200,9 @@ struct ReceiverCommonConfig {
         , resampling(false)
         , timing(false)
         , poisoning(false)
-        , beeping(false) {
+        , beeping(false)
+        , max_sessions(DefaultMaxSessions)
+        , max_session_packets(DefaultMaxSessionPackets) {
     }
 };
 

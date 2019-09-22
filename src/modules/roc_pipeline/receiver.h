@@ -126,6 +126,8 @@ private:
     core::Mutex control_mutex_;
     core::Mutex pipeline_mutex_;
     core::Cond active_cond_;
+
+    core::List<packet::Packet> ring_buffer_;
 };
 
 } // namespace pipeline

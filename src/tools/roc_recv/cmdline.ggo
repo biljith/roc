@@ -64,6 +64,12 @@ section "Options"
 
     option "beeping" - "Enable beeping on packet loss" flag off
 
+    option "max-sessions" - "Maximum number of sessions"
+        int optional
+
+    option "max-session-packets" - "Maximum number of packets per client/session"
+        int optional
+
 text "
 OUTPUT is the file name or device name, depending on the selected DRIVER, e.g.:
   file.wav; front:CARD=PCH,DEV=0; alsa_input.pci-0000_00_1f.3.analog-stereo;
